@@ -2103,6 +2103,7 @@ MonoBehaviour:
   baseUrl: https://gameppa-backend.onrender.com
   currentUsername: peet
   authToken: 
+  isLoggedIn: 0
 --- !u!1 &309477212
 GameObject:
   m_ObjectHideFlags: 0
@@ -6553,7 +6554,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1498592726}
         m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
-        m_MethodName: OpenDeviceConnect
+        m_MethodName: StartGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -8336,6 +8337,9 @@ MonoBehaviour:
   level: 1
   survivalTime: 0
   gameOverPanel: {fileID: 769413494}
+  panelMainGuest: {fileID: 1872933244}
+  panelMainUser: {fileID: 1865465085}
+  panelModeSelect: {fileID: 1058613787}
   currentSave:
     username: Player1
     highScore: 0
@@ -12059,8 +12063,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.000103, y: -4.91}
-  m_SizeDelta: {x: 2347.8, y: 1079.95}
+  m_AnchoredPosition: {x: 0.0029907, y: -4.91}
+  m_SizeDelta: {x: 1800.2, y: 1079.95}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1250095017
 MonoBehaviour:
@@ -12750,7 +12754,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1498592726}
         m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
-        m_MethodName: OpenDeviceConnect
+        m_MethodName: StartGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -14606,7 +14610,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8754e7c2e87550f4db647723a488a61b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  moveSpeed: 5
+  moveSpeed: 50
 --- !u!1 &1712370402
 GameObject:
   m_ObjectHideFlags: 0
@@ -16094,8 +16098,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4279900698
+  m_fontColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -17468,9 +17472,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1498592726}
-        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
-        m_MethodName: ShowMainPage
+      - m_Target: {fileID: 1003240187}
+        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+        m_MethodName: GoToMainMenu
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

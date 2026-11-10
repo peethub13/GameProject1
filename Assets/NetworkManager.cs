@@ -56,6 +56,7 @@ public class NetworkManager : MonoBehaviour
     [Header("User Session")]
     public string currentUsername = "";
     public string authToken = ""; // 🔑 ตัวแปรเก็บ Token ยืนยันตัวตน
+    public bool isLoggedIn = false; // 🟢 เพิ่มตัวแปรเก็บบอกสถานะ Login ให้ GameManager เรียกใช้
 
     void Awake()
     {
@@ -91,6 +92,8 @@ public class NetworkManager : MonoBehaviour
             if (www.result == UnityWebRequest.Result.Success)
             {
                 currentUsername = username;
+                isLoggedIn = true; // 🟢 สั่งบันทึกว่าเข้าสู่ระบบสำเร็จแล้ว
+                
                 string jsonResponse = www.downloadHandler.text;
                 
                 // 🔑 ดึง Token จาก response เก็บไว้ใช้ยืนยันตัวตนส่งคะแนน
@@ -110,9 +113,19 @@ public class NetworkManager : MonoBehaviour
             }
             else
             {
+                isLoggedIn = false;
                 Debug.LogError("❌ เข้าสู่ระบบไม่สำเร็จ: " + www.error + " | " + www.downloadHandler.text);
             }
         }
+    }
+
+    // 🚪 ฟังก์ชันสำหรับ ออกจากระบบ (Logout)
+    public void Logout()
+    {
+        currentUsername = "";
+        authToken = "";
+        isLoggedIn = false; // 🟢 รีเซ็ตสถานะ Login กลับเป็น false
+        Debug.Log("🚪 ออกจากระบบเรียบร้อย");
     }
 
     // ----------------------------------------------------
@@ -149,7 +162,7 @@ public class NetworkManager : MonoBehaviour
     // ----------------------------------------------------
     public void SubmitScore(int score)
     {
-        if (string.IsNullOrEmpty(currentUsername))
+        if (string.IsNullOrEmpty(currentUsername) || !isLoggedIn)
         {
             Debug.LogWarning("⚠️ ยังไม่ได้ล็อกอิน ไม่สามารถบันทึกคะแนนได้");
             return;

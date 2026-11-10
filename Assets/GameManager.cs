@@ -1,6 +1,6 @@
 using System.IO;
 using UnityEngine;
-using UnityEngine.SceneManagement; // เพิ่มเพื่อใช้ในการ Reload Scene หรือกลับหน้า Menu
+using UnityEngine.SceneManagement; // ใช้สำหรับการจัดการ Scene
 
 [System.Serializable]
 public class SaveData
@@ -25,7 +25,10 @@ public class GameManager : MonoBehaviour
     public float survivalTime = 0f;
 
     [Header("UI Panels")]
-    public GameObject gameOverPanel; // 🟢 ช่องสำหรับลาก GameOverPanel ใน Hierarchy มาใส่
+    public GameObject gameOverPanel;  // ช่องสำหรับลาก GameOverPanel ใน Hierarchy มาใส่
+    public GameObject panelMainGuest; // ตัวแปรอ้างอิง Panel Main Guest
+    public GameObject panelMainUser;  // ตัวแปรอ้างอิง Panel Main User
+    public GameObject panelModeSelect; // ตัวแปรอ้างอิง Panel Mode Select
 
     [Header("Save Data")]
     public SaveData currentSave = new SaveData();
@@ -56,14 +59,14 @@ public class GameManager : MonoBehaviour
         level = Mathf.FloorToInt(survivalTime / 20f) + 1; 
     }
 
-    // 🟢 ฟังก์ชันสำหรับบวก/หัก คะแนน (ป้องกัน Error CS1061)
+    // ฟังก์ชันสำหรับบวก/หัก คะแนน
     public void AddScore(int value)
     {
         score += value;
         if (score < 0) score = 0; // ป้องกันคะแนนติดลบ
     }
 
-    // เพิ่มฟังก์ชันสำหรับเรียกใช้งานเมื่อกดปุ่ม Start/Play จาก UIManager
+    // ฟังก์ชันสำหรับเรียกใช้งานเมื่อกดปุ่ม Start/Play จาก UIManager
     public void StartGame()
     {
         Time.timeScale = 1f; // มั่นใจว่าเวลากลับมาเดินปกติ
@@ -74,6 +77,7 @@ public class GameManager : MonoBehaviour
         isGameOver = false;
         
         if (gameOverPanel != null) gameOverPanel.SetActive(false); // ซ่อน UI Game Over
+        if (panelModeSelect != null) panelModeSelect.SetActive(false); // ซ่อนหน้าเลือกโหมดเมื่อเริ่มเล่น
         
         isGameStarted = true; // สั่งเริ่มเกม
     }
@@ -109,46 +113,77 @@ public class GameManager : MonoBehaviour
 
         SaveGame();
 
-        // 🌐 🏆 ส่งคะแนนไปบันทึกลง Firebase ผ่าน NetworkManager ( Render Backend )
+        // ส่งคะแนนไปบันทึกลง Firebase ผ่าน NetworkManager
         if (NetworkManager.Instance != null)
         {
             NetworkManager.Instance.SubmitScore(score);
         }
 
-        // 🌐 🎮 (เพิ่มใหม่) แจ้ง Server และ ESP32 ว่าจบเกม เพื่อตัดเข้าสู่โหมดปุ่มกดเลือกเมนู UI
-        if (NetworkInputManager.Instance != null)
-        {
-            NetworkInputManager.Instance.NotifyGameOver();
-        }
+        // แจ้ง ESP32 ให้เปลี่ยนสถานะจอยสติ๊กกลับสู่โหมด UI
+        NotifyGameOver();
 
-        // 🟢 1. สั่งเปิด UI Game Over Panel
+        // 1. สั่งเปิด UI Game Over Panel
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
         }
 
-        // 🟢 2. หยุดเวลาในเกม (ฟิสิกส์และการเคลื่อนที่ทั้งหมดจะถูกแช่แข็ง)
+        // 2. หยุดเวลาในเกม (ฟิสิกส์และการเคลื่อนที่ทั้งหมดจะถูกแช่แข็ง)
         Time.timeScale = 0f;
     }
 
-    // 🟢 3. ฟังก์ชันสำหรับผูกกับปุ่ม Restart (เล่นใหม่ทันที)
+    // 🟢 3. ฟังก์ชันสำหรับผูกกับปุ่ม Restart / Play Again (กลับไปหน้าเลือกโหมด)
     public void RestartGame()
     {
-        Time.timeScale = 1f; // คืนค่าเวลาปกติ
+        Time.timeScale = 1f; // คืนค่าความเร็วเกมเป็นปกติ
 
-        // เรียก StartGame() รีเซ็ตค่าคะแนน/เวลา/สถานะ แล้วเริ่มเล่นทันที
-        StartGame(); 
+        // 1. ปิดหน้า Game Over
+        if (gameOverPanel != null) 
+            gameOverPanel.SetActive(false);
 
-        // โหลด Scene ใหม่เพื่อเคลียร์วัตถุเดิมบนหน้าจอ
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        // 2. ปิดหน้า Main Menu ต่างๆ (กันขึ้นซ้อน)
+        if (panelMainGuest != null) panelMainGuest.SetActive(false);
+        if (panelMainUser != null) panelMainUser.SetActive(false);
+
+        // 3. บังคับเปิดหน้าเลือกโหมด (Panel_ModeSelect)
+        if (panelModeSelect != null) 
+        {
+            panelModeSelect.SetActive(true);
+        }
+
+        // 4. สั่งแจ้ง ESP32 ให้กลับมาสภาวะใช้ปุ่มกดเพื่อเลือกโหมดอีกครั้ง
+        NotifyGameOver();
     }
 
-    // 🟢 4. ฟังก์ชันสำหรับผูกกับปุ่ม Main Menu
-    public void GoToMainMenu()
+    // 🟢 ฟังก์ชันส่งสัญญาณแจ้ง ESP32/Server เมื่อจบเกมหรือต้องการคืนค่าเมนู
+    public void NotifyGameOver()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene("MainMenuScene"); // เปลี่ยนชื่อ Scene ตามหน้าเมนูของคุณ
+        if (NetworkInputManager.Instance != null)
+        {
+            NetworkInputManager.Instance.NotifyGameOver();
+        }
     }
+
+    // 🟢 4. ฟังก์ชันสำหรับปุ่ม Back / Go to Main Menu (เช็กสถานะ Login)
+    // 🟢 บังคับเปิด Panel_MainUser เสมอเมื่อกด Home / GoToMainMenu
+public void GoToMainMenu()
+{
+    Time.timeScale = 1f; // คืนเวลาปกติ
+
+    // 1. ปิดหน้า UI ที่ไม่เกี่ยวข้อง
+    if (gameOverPanel != null) gameOverPanel.SetActive(false);
+    if (panelModeSelect != null) panelModeSelect.SetActive(false);
+    if (panelMainGuest != null) panelMainGuest.SetActive(false); // ปิดหน้า Guest
+
+    // 2. บังคับเปิดหน้า Main User ทันที
+    if (panelMainUser != null) 
+    {
+        panelMainUser.SetActive(true);
+    }
+
+    // 3. แจ้ง ESP32 ให้เปลี่ยนสถานะจอยกลับสู่โหมด UI
+    NotifyGameOver();
+}
 
     public void SaveGame()
     {
