@@ -56,7 +56,7 @@ public class GameManager : MonoBehaviour
         level = Mathf.FloorToInt(survivalTime / 20f) + 1; 
     }
 
-    // 🟢 เพิ่ม: ฟังก์ชันสำหรับบวก/หัก คะแนน (ป้องกัน Error CS1061)
+    // 🟢 ฟังก์ชันสำหรับบวก/หัก คะแนน (ป้องกัน Error CS1061)
     public void AddScore(int value)
     {
         score += value;
@@ -113,6 +113,12 @@ public class GameManager : MonoBehaviour
         if (NetworkManager.Instance != null)
         {
             NetworkManager.Instance.SubmitScore(score);
+        }
+
+        // 🌐 🎮 (เพิ่มใหม่) แจ้ง Server และ ESP32 ว่าจบเกม เพื่อตัดเข้าสู่โหมดปุ่มกดเลือกเมนู UI
+        if (NetworkInputManager.Instance != null)
+        {
+            NetworkInputManager.Instance.NotifyGameOver();
         }
 
         // 🟢 1. สั่งเปิด UI Game Over Panel

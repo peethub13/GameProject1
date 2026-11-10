@@ -176,7 +176,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Button
+  m_text: Photo resister
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -6504,8 +6504,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -300, y: -100}
-  m_SizeDelta: {x: 300, y: 100}
+  m_AnchoredPosition: {x: -352.07074, y: -100}
+  m_SizeDelta: {x: 404.142, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &638762881
 MonoBehaviour:
@@ -7840,7 +7840,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 918576803}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -8140,7 +8140,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Voice
+  m_text: Potention meter
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -8450,6 +8450,7 @@ GameObject:
   - component: {fileID: 1058613788}
   - component: {fileID: 1058613790}
   - component: {fileID: 1058613789}
+  - component: {fileID: 1058613791}
   m_Layer: 5
   m_Name: Panel_ModeSelect
   m_TagString: Untagged
@@ -8517,6 +8518,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1058613787}
   m_CullTransparentMesh: 1
+--- !u!114 &1058613791
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1058613787}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b138ccbe2ef59cc4b8502ae2a5605ac7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MenuNavigation
+  menuButtons:
+  - {fileID: 638762881}
+  - {fileID: 1361455618}
 --- !u!1 &1064957333
 GameObject:
   m_ObjectHideFlags: 0
@@ -11955,6 +11971,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1240391944
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1240391946}
+  - component: {fileID: 1240391945}
+  m_Layer: 0
+  m_Name: NetworkInputManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1240391945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1240391944}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 335e365e8a6b0a94abae8a1ff025b94c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkInputManager
+  serverIP: 172.20.10.2
+  serverPort: 5000
+  pollInterval: 0.05
+  currentMode: POT
+  currentDirection: CENTER
+  horizontalInput: 0
+  isGameActive: 0
+--- !u!4 &1240391946
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1240391944}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 306.12592, y: 169.891, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1250095015
 GameObject:
   m_ObjectHideFlags: 0
@@ -12199,7 +12266,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1291934955}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
@@ -12634,8 +12701,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 300, y: -100}
-  m_SizeDelta: {x: 300, y: 100}
+  m_AnchoredPosition: {x: 357, y: -100}
+  m_SizeDelta: {x: 445.314, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1361455618
 MonoBehaviour:
@@ -14355,6 +14422,7 @@ GameObject:
   - component: {fileID: 1712088655}
   - component: {fileID: 1712088654}
   - component: {fileID: 1712088658}
+  - component: {fileID: 1712088659}
   m_Layer: 0
   m_Name: Square
   m_TagString: Stretcher
@@ -14526,6 +14594,19 @@ MonoBehaviour:
   minX: -4.43
   maxX: 3.4
   invertDirection: 1
+--- !u!114 &1712088659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1712088653}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8754e7c2e87550f4db647723a488a61b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
+  moveSpeed: 5
 --- !u!1 &1712370402
 GameObject:
   m_ObjectHideFlags: 0
@@ -19552,3 +19633,4 @@ SceneRoots:
   - {fileID: 295304755}
   - {fileID: 599648057}
   - {fileID: 804526622}
+  - {fileID: 1240391946}
