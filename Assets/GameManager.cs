@@ -165,25 +165,33 @@ public class GameManager : MonoBehaviour
     }
 
     // 🟢 4. ฟังก์ชันสำหรับปุ่ม Back / Go to Main Menu (เช็กสถานะ Login)
-    // 🟢 บังคับเปิด Panel_MainUser เสมอเมื่อกด Home / GoToMainMenu
-public void GoToMainMenu()
-{
-    Time.timeScale = 1f; // คืนเวลาปกติ
-
-    // 1. ปิดหน้า UI ที่ไม่เกี่ยวข้อง
-    if (gameOverPanel != null) gameOverPanel.SetActive(false);
-    if (panelModeSelect != null) panelModeSelect.SetActive(false);
-    if (panelMainGuest != null) panelMainGuest.SetActive(false); // ปิดหน้า Guest
-
-    // 2. บังคับเปิดหน้า Main User ทันที
-    if (panelMainUser != null) 
+    public void GoToMainMenu()
     {
-        panelMainUser.SetActive(true);
-    }
+        Time.timeScale = 1f; // คืนเวลาปกติ
 
-    // 3. แจ้ง ESP32 ให้เปลี่ยนสถานะจอยกลับสู่โหมด UI
-    NotifyGameOver();
-}
+        // 1. ปิดหน้า UI ที่ไม่เกี่ยวข้อง
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (panelModeSelect != null) panelModeSelect.SetActive(false);
+
+        // 2. เช็กสถานะการ Login จาก NetworkManager
+        bool isUserLoggedIn = NetworkManager.Instance != null && NetworkManager.Instance.isLoggedIn;
+
+        if (isUserLoggedIn)
+        {
+            // ถ้า Login แล้ว -> เปิดหน้า Main User
+            if (panelMainUser != null) panelMainUser.SetActive(true);
+            if (panelMainGuest != null) panelMainGuest.SetActive(false);
+        }
+        else
+        {
+            // ถ้ายังไม่ได้ Login (เข้าแบบ Guest) -> เปิดหน้า Main Guest
+            if (panelMainGuest != null) panelMainGuest.SetActive(true);
+            if (panelMainUser != null) panelMainUser.SetActive(false);
+        }
+
+        // 3. แจ้ง ESP32 ให้เปลี่ยนสถานะจอยกลับสู่โหมด UI
+        NotifyGameOver();
+    }
 
     public void SaveGame()
     {
@@ -204,4 +212,29 @@ public void GoToMainMenu()
     {
         combo = 0;
     }
+
+//
+private void OnEnable()
+{
+    if (NetworkInputManager.Instance != null)
+    {
+        NetworkInputManager.Instance.OnMenuSelectPressed += HandleESP32Select;
+    }
 }
+
+private void OnDisable()
+{
+    if (NetworkInputManager.Instance != null)
+    {
+        NetworkInputManager.Instance.OnMenuSelectPressed -= HandleESP32Select;
+    }
+}
+
+private void HandleESP32Select()
+{
+    Debug.Log("ESP32 GPIO 21: SELECT PRESSED");
+
+    StartGame();
+}
+}
+

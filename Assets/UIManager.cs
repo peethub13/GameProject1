@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 public class UIManager : MonoBehaviour
 {
@@ -284,4 +285,41 @@ private System.Collections.IEnumerator PhantomJumpscareRoutine()
     phantomImageTransform.anchoredPosition = originalPos;
     phantomImageTransform.gameObject.SetActive(false);
 }
+//
+private void OnEnable()
+{
+    StartCoroutine(SubscribeToNetworkInput());
 }
+
+private IEnumerator SubscribeToNetworkInput()
+{
+    // รอจนกว่า NetworkInputManager จะพร้อม
+    while (NetworkInputManager.Instance == null)
+    {
+        yield return null;
+    }
+
+    NetworkInputManager.Instance.OnMenuSelectPressed -= HandleESP32Select;
+    NetworkInputManager.Instance.OnMenuSelectPressed += HandleESP32Select;
+
+    Debug.Log("UIManager connected to NetworkInputManager!");
+}
+
+private void OnDisable()
+{
+    if (NetworkInputManager.Instance != null)
+    {
+        NetworkInputManager.Instance.OnMenuSelectPressed -= HandleESP32Select;
+    }
+}
+
+private void HandleESP32Select()
+{
+    Debug.Log("ESP32 GPIO 21 PRESSED!");
+
+    OpenModeSelect();
+}
+
+
+}
+

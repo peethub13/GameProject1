@@ -62,9 +62,15 @@ public class NetworkInputManager : MonoBehaviour
                 yield return www.SendWebRequest();
 
                 if (www.result == UnityWebRequest.Result.Success)
-                {
-                    ParseServerData(www.downloadHandler.text);
-                }
+{
+    Debug.Log("ได้รับข้อมูลจาก Raspberry Pi: " + www.downloadHandler.text);
+    ParseServerData(www.downloadHandler.text);
+}
+else
+{
+    Debug.LogError("เชื่อมต่อ Raspberry Pi ไม่สำเร็จ: " 
+        + www.error + " | URL: " + getInputUrl);
+}
             }
             yield return new WaitForSeconds(pollInterval);
         }
