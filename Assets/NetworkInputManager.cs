@@ -7,32 +7,33 @@ public class NetworkInputManager : MonoBehaviour
 {
     public static NetworkInputManager Instance;
 
-    [Header("--- 🌐 Server Config ---")]
+    [Header("--- Server Config ---")]
     public string serverIP = "192.168.50.2";
     public int serverPort = 5000;
-    public float pollInterval = 0.05f; // ดึงข้อมูลทุก 0.05 วินาที (20Hz)
+    public float pollInterval = 0.05f;
 
-    [Header("--- 📊 Output Values (Read Only) ---")]
+    [Header("--- Output Values ---")]
     public string currentMode = "POT";
     public string currentDirection = "CENTER";
-    public float horizontalInput = 0f; // -1 (ซ้าย), 0 (ตรงกลาง), 1 (ขวา)
+    public float horizontalInput = 0f;
     public bool isGameActive = false;
 
-    // Events สำหรับสั่งงาน UI Menu แบบจังหวะกด
     public event Action OnMenuLeftPressed;
     public event Action OnMenuRightPressed;
     public event Action OnMenuSelectPressed;
 
-    //private string lastDirection = "CENTER";
     private string getInputUrl;
     private string gameOverUrl;
+
+    private bool hasReceivedServerData = false;
+    private bool pendingStartGame = false;
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // ให้คงอยู่ข้าม Scene ได้
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -41,81 +42,166 @@ public class NetworkInputManager : MonoBehaviour
     }
 
     private void Start()
-{
-    Debug.Log("TEST START WORKING");
+    {
+        Debug.Log("[Network] NetworkInputManager Started!");
 
-    getInputUrl = $"http://{serverIP}:{serverPort}/unity_input";
-    gameOverUrl = $"http://{serverIP}:{serverPort}/game/finish";
+        getInputUrl = $"http://{serverIP}:{serverPort}/unity_input";
+        gameOverUrl = $"http://{serverIP}:{serverPort}/game/finish";
 
-    Debug.Log("กำลังเชื่อมต่อ Raspberry Pi: " + getInputUrl);
-    StartCoroutine(FetchInputLoop());
-}
+        Debug.Log("[Network] Raspberry Pi URL: " + getInputUrl);
 
-    // วนลูปดึงข้อมูลจาก Raspberry Pi Server
+        StartCoroutine(FetchInputLoop());
+    }
+
+    private void Update()
+    {
+        // รอ UIManager พร้อมแล้วจึงเริ่มเกม
+        if (pendingStartGame)
+        {
+            TryStartGame();
+        }
+    }
+
     private IEnumerator FetchInputLoop()
     {
         while (true)
         {
             using (UnityWebRequest www = UnityWebRequest.Get(getInputUrl))
             {
-                www.timeout = 2;
+                www.timeout = 5;
+
                 yield return www.SendWebRequest();
 
                 if (www.result == UnityWebRequest.Result.Success)
-{
-    Debug.Log("ได้รับข้อมูลจาก Raspberry Pi: " + www.downloadHandler.text);
-    ParseServerData(www.downloadHandler.text);
-}
-else
-{
-    Debug.LogError("เชื่อมต่อ Raspberry Pi ไม่สำเร็จ: " 
-        + www.error + " | URL: " + getInputUrl);
-}
+                {
+                    ParseServerData(www.downloadHandler.text);
+                }
+                else
+                {
+                    Debug.LogError(
+                        "[Network] Raspberry Pi Connection Failed: "
+                        + www.error
+                    );
+                }
             }
-            yield return new WaitForSeconds(pollInterval);
+
+            yield return new WaitForSecondsRealtime(pollInterval);
         }
     }
 
     private void ParseServerData(string jsonText)
-{   
-    Debug.Log("ได้รับข้อมูลจาก Raspberry Pi: " + jsonText);
-    try
     {
-        ServerInputData data =
-            JsonUtility.FromJson<ServerInputData>(jsonText);
-
-        currentMode = data.mode;
-        currentDirection = data.direction;
-        isGameActive = data.game_active;
-
-        // รับค่าทิศทางจาก POT หรือ LDR
-        if (currentDirection == "LEFT")
-            horizontalInput = -1f;
-        else if (currentDirection == "RIGHT")
-            horizontalInput = 1f;
-        else
-            horizontalInput = 0f;
-
-        // รับปุ่มเมนูแยกจากทิศทางเซนเซอร์
-        if (!isGameActive)
+        try
         {
-            if (data.button == "LEFT")
-                OnMenuLeftPressed?.Invoke();
+            ServerInputData data =
+                JsonUtility.FromJson<ServerInputData>(jsonText);
 
-            else if (data.button == "RIGHT")
-                OnMenuRightPressed?.Invoke();
+            if (data == null)
+            {
+                Debug.LogWarning("[Network] JSON Data is NULL!");
+                return;
+            }
 
-            else if (data.button == "OK")
-                OnMenuSelectPressed?.Invoke();
+            bool wasGameActive = isGameActive;
+
+            currentMode = data.mode;
+            currentDirection = data.direction;
+            isGameActive = data.game_active;
+
+            // แสดงข้อมูลครั้งแรกที่ได้รับ
+            if (!hasReceivedServerData)
+            {
+                Debug.Log(
+                    "[Network] First Server Data: " + jsonText
+                );
+
+                hasReceivedServerData = true;
+            }
+
+            // แสดง Log เมื่อสถานะเกมเปลี่ยน
+            if (wasGameActive != isGameActive)
+            {
+                Debug.Log(
+                    $"[Network] Game State Changed: " +
+                    $"{wasGameActive} -> {isGameActive}, " +
+                    $"Mode: {currentMode}"
+                );
+            }
+
+            // รับค่าทิศทางจาก POT หรือ LDR
+            if (currentDirection == "LEFT")
+            {
+                horizontalInput = -1f;
+            }
+            else if (currentDirection == "RIGHT")
+            {
+                horizontalInput = 1f;
+            }
+            else
+            {
+                horizontalInput = 0f;
+            }
+
+            // ตรวจจับคำสั่งเริ่มเกม
+            if (!wasGameActive && isGameActive)
+            {
+                Debug.Log(
+                    "[Network] Raspberry Pi START GAME!"
+                );
+
+                pendingStartGame = true;
+            }
+
+            // ลองเริ่มเกมเมื่อมีคำสั่งรออยู่
+            if (pendingStartGame)
+            {
+                TryStartGame();
+            }
+
+            // รับปุ่มเมนูเมื่อเกมยังไม่เริ่ม
+            if (!isGameActive)
+            {
+                if (data.button == "LEFT")
+                {
+                    OnMenuLeftPressed?.Invoke();
+                }
+                else if (data.button == "RIGHT")
+                {
+                    OnMenuRightPressed?.Invoke();
+                }
+                else if (data.button == "OK")
+                {
+                    OnMenuSelectPressed?.Invoke();
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(
+                "[Network] JSON Parsing Error: " + e.Message
+            );
         }
     }
-    catch (Exception e)
-    {
-        Debug.LogWarning("Error parsing server data: " + e.Message);
-    }
-}
 
-    // สั่งแจ้ง Server ว่าจบเกม เพื่อให้ ESP32 ตัดกลับหน้า Menu
+    private void TryStartGame()
+    {
+        if (UIManager.Instance == null)
+        {
+            return;
+        }
+
+        Debug.Log("[Network] UIManager Found!");
+
+        // ป้องกันการเรียกซ้ำ
+        pendingStartGame = false;
+
+        UIManager.Instance.StartGame();
+
+        Debug.Log(
+            "[Network] StartGame() Called Successfully!"
+        );
+    }
+
     public void NotifyGameOver()
     {
         StartCoroutine(SendGameOverSignal());
@@ -123,19 +209,32 @@ else
 
     private IEnumerator SendGameOverSignal()
     {
-        using (UnityWebRequest www = UnityWebRequest.PostWwwForm(gameOverUrl, ""))
+        using (UnityWebRequest www =
+            UnityWebRequest.PostWwwForm(gameOverUrl, ""))
         {
+            www.timeout = 5;
+
             yield return www.SendWebRequest();
+
             if (www.result == UnityWebRequest.Result.Success)
             {
-                Debug.Log("🏁 แจ้ง Game Over ไปยัง ESP32 เรียบร้อยแล้ว");
+                Debug.Log(
+                    "[Network] Game Over Signal Sent!"
+                );
+
                 isGameActive = false;
+                pendingStartGame = false;
+            }
+            else
+            {
+                Debug.LogError(
+                    "[Network] Game Over Failed: " + www.error
+                );
             }
         }
     }
 }
 
-// โครงสร้างข้อมูล JSON ที่รับมาจาก Raspberry Pi
 [System.Serializable]
 public class ServerInputData
 {
@@ -146,6 +245,3 @@ public class ServerInputData
     public int leftValue;
     public int rightValue;
 }
-
-
-
