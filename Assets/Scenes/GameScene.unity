@@ -12265,7 +12265,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 335e365e8a6b0a94abae8a1ff025b94c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkInputManager
-  serverIP: 172.20.10.2
+  serverIP: 192.168.50.2
   serverPort: 5000
   pollInterval: 0.05
   currentMode: POT
