@@ -1,57 +1,162 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;
 
 public class ComboManager : MonoBehaviour
 {
     public static ComboManager Instance;
 
     [Header("--- 💬 UI Display ---")]
-    public TMP_Text comboText; // ลาก Text (TMP) ที่จะแสดงคำชมมาใส่ช่องนี้
+    public TMP_Text comboText;          // แสดงตัวเลข Combo (เช่น Combo: 5)
+    public TMP_Text txtComboFeedback;   // 🟢 แสดงข้อความ GOOD! / GREAT! / EXCELLENT!
+
+    [Header("--- ⏱️ Settings ---")]
+    [Tooltip("ระยะเวลาที่ให้ข้อความแสดงก่อนจะจางหายไป (วินาที)")]
+    public float displayDuration = 1.0f;
 
     private int currentCombo = 0;
+    private Coroutine feedbackRoutine;
+    private Vector3 originalScale = Vector3.one;
 
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+
+        if (txtComboFeedback != null)
+        {
+            originalScale = txtComboFeedback.transform.localScale;
+        }
     }
 
-    // Call ฟังก์ชันนี้ทุกครั้งที่นำ Object เข้ารถพยาบาลสำเร็จ 1 ตัว
+    private void Update()
+    {
+        if (GameManager.Instance != null && GameManager.Instance.isGameStarted)
+        {
+            if (currentCombo != GameManager.Instance.combo)
+            {
+                int newCombo = GameManager.Instance.combo;
+                
+                if (newCombo > currentCombo)
+                {
+                    CheckComboMilestone(newCombo);
+                }
+                
+                currentCombo = newCombo;
+                UpdateComboTextOnly();
+            }
+        }
+    }
+
     public void AddCombo()
     {
         currentCombo++;
-        UpdateComboUI();
+        CheckComboMilestone(currentCombo);
+        UpdateComboTextOnly();
     }
 
-    // Call ฟังก์ชันนี้เมื่อหลุด Combo หรือจบเกม/เริ่มเกมใหม่
     public void ResetCombo()
     {
         currentCombo = 0;
+        
         if (comboText != null) 
             comboText.text = "";
+
+        if (txtComboFeedback != null)
+            txtComboFeedback.gameObject.SetActive(false);
     }
 
-    // ฟังก์ชันคำนวณและแสดงคำชมตามจำนวน Combo
-    private void UpdateComboUI()
+    private void UpdateComboTextOnly()
     {
-        if (comboText == null) return;
+        if (comboText != null)
+        {
+            comboText.text = currentCombo > 0 ? "Combo: " + currentCombo : "";
+        }
+    }
 
-        if (currentCombo >= 15)
+    private void CheckComboMilestone(int comboVal)
+    {
+        if (txtComboFeedback == null) return;
+
+        if (comboVal == 5)
         {
-            comboText.text = "เยี่ยมมากเยี่ยมมาย 🔥";
+            ShowFeedback("GOOD!", Color.green);
         }
-        else if (currentCombo >= 10)
+        else if (comboVal == 10)
         {
-            comboText.text = "เยี่ยมมาก 👍";
+            ShowFeedback("GREAT!", Color.yellow);
         }
-        else if (currentCombo >= 5)
+        else if (comboVal >= 15 && comboVal % 5 == 0)
         {
-            comboText.text = "หวานเจี๊ยบ ✨";
+            ShowFeedback("EXCELLENT!", Color.magenta);
         }
-        else
+    }
+
+    private void ShowFeedback(string message, Color color)
+    {
+        txtComboFeedback.text = message;
+        txtComboFeedback.color = color;
+        txtComboFeedback.gameObject.SetActive(true);
+
+        if (feedbackRoutine != null)
         {
-            // ถ้ายังไม่ถึง 5 ตัว สามารถเลือกได้ว่าให้อนข้างว่างไว้ หรือโชว์จำนวนนับแบบปกติก่อน
-            comboText.text = $"x{currentCombo}"; 
+            StopCoroutine(feedbackRoutine);
         }
+        feedbackRoutine = StartCoroutine(JuicyPopRoutine());
+    }
+
+    // 💥 Coroutine เด้งสปริง + สุ่มมุมหมุน + Fade Out จางหาย
+    private IEnumerator JuicyPopRoutine()
+    {
+        Transform tf = txtComboFeedback.transform;
+
+        // 1. สุ่มมุมหมุนเอียงเล็กน้อย (-6 ถึง +6 องศา) เพิ่มความดุดัน
+        float randomAngle = Random.Range(-6f, 6f);
+        tf.localRotation = Quaternion.Euler(0, 0, randomAngle);
+
+        // 2. เด้งขยายใหญ่ขึ้นสไตล์ Elastic Pop (ใหญ่สุด 1.5 เท่า)
+        Vector3 peakScale = originalScale * 1.5f;
+        Vector3 dipScale = originalScale * 0.9f;
+        
+        float time = 0f;
+        // ช่วงที่ 1: พุ่งใหญ่ขึ้นไวมาก
+        while (time < 0.1f)
+        {
+            time += Time.deltaTime;
+            tf.localScale = Vector3.Lerp(originalScale, peakScale, time / 0.1f);
+            yield return null;
+        }
+
+        time = 0f;
+        // ช่วงที่ 2: ย่อลงต่ำกว่าขนาดปกติเล็กน้อย (สปริง)
+        while (time < 0.08f)
+        {
+            time += Time.deltaTime;
+            tf.localScale = Vector3.Lerp(peakScale, dipScale, time / 0.08f);
+            yield return null;
+        }
+
+        // ช่วงที่ 3: เด้งกลับมาขนาดปกติ
+        tf.localScale = originalScale;
+
+        // 3. ค้างไว้ตามเวลา displayDuration
+        yield return new WaitForSeconds(displayDuration);
+
+        // 4. Fade Out (ค่อยๆ โปร่งแสงจางหายไปใน 0.3 วินาที)
+        time = 0f;
+        Color startColor = txtComboFeedback.color;
+        
+        while (time < 0.3f)
+        {
+            time += Time.deltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, time / 0.3f);
+            txtComboFeedback.color = new Color(startColor.r, startColor.g, startColor.b, alpha);
+            yield return null;
+        }
+
+        // คืนค่า Alpha และปิดการแสดงผล
+        txtComboFeedback.color = startColor;
+        tf.localRotation = Quaternion.identity;
+        txtComboFeedback.gameObject.SetActive(false);
     }
 }
