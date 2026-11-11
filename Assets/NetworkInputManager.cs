@@ -8,7 +8,7 @@ public class NetworkInputManager : MonoBehaviour
     public static NetworkInputManager Instance;
 
     [Header("--- 🌐 Server Config ---")]
-    public string serverIP = "172.20.10.2";
+    public string serverIP = "192.168.50.2";
     public int serverPort = 5000;
     public float pollInterval = 0.05f; // ดึงข้อมูลทุก 0.05 วินาที (20Hz)
 
