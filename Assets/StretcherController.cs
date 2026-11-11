@@ -54,7 +54,7 @@ public class StretcherController : MonoBehaviour
             // 1. เรียกทำ Phantom Jumpscare (ภาพพุ่งใส่หน้า + สั่นรัวๆ + เสียง)
             if (UIManager.Instance != null)
             {
-                UIManager.Instance.TriggerPhantomJumpscare();
+                //UIManager.Instance.TriggerPhantomJumpscare();
             }
 
             // 2. หักคะแนน
