@@ -27,19 +27,28 @@ public class NetworkInputManager : MonoBehaviour
 
     private bool hasReceivedServerData = false;
     private bool pendingStartGame = false;
+
     [Header("--- Hardware Detection ---")]
-public float hardwareTimeout = 1.5f;
+    public float hardwareTimeout = 1.5f;
 
-private float lastHardwareReceiveTime = -999f;
+    private float lastHardwareReceiveTime = -999f;
 
-public bool IsHardwareConnected
-{
-    get
+    public bool IsHardwareConnected
     {
-        return Time.unscaledTime - lastHardwareReceiveTime
-               <= hardwareTimeout;
+        get
+        {
+            return IsHardwareMode() &&
+                   Time.unscaledTime - lastHardwareReceiveTime
+                   <= hardwareTimeout;
+        }
     }
-}
+
+    // ตรวจสอบว่าเลือก Hardware Mode หรือไม่
+    private bool IsHardwareMode()
+    {
+        return GameModeManager.Instance != null &&
+               GameModeManager.Instance.useHardware;
+    }
 
     private void Awake()
     {
@@ -58,10 +67,26 @@ public bool IsHardwareConnected
     {
         Debug.Log("[Network] NetworkInputManager Started!");
 
-        getInputUrl = $"http://{serverIP}:{serverPort}/unity_input";
-        gameOverUrl = $"http://{serverIP}:{serverPort}/game/finish";
+        // ถ้าใช้คีย์บอร์ด ไม่เชื่อม Raspberry Pi
+        if (!IsHardwareMode())
+        {
+            Debug.Log(
+                "[Network] Keyboard Mode - Raspberry Pi Disabled"
+            );
 
-        Debug.Log("[Network] Raspberry Pi URL: " + getInputUrl);
+            return;
+        }
+
+        // เริ่มเชื่อม Raspberry Pi เฉพาะ Hardware Mode
+        getInputUrl =
+            $"http://{serverIP}:{serverPort}/unity_input";
+
+        gameOverUrl =
+            $"http://{serverIP}:{serverPort}/game/finish";
+
+        Debug.Log(
+            "[Network] Raspberry Pi URL: " + getInputUrl
+        );
 
         StartCoroutine(FetchInputLoop());
     }
@@ -77,17 +102,21 @@ public bool IsHardwareConnected
 
     private IEnumerator FetchInputLoop()
     {
-        while (true)
+        while (IsHardwareMode())
         {
-            using (UnityWebRequest www = UnityWebRequest.Get(getInputUrl))
+            using (UnityWebRequest www =
+                   UnityWebRequest.Get(getInputUrl))
             {
                 www.timeout = 5;
 
                 yield return www.SendWebRequest();
 
-                if (www.result == UnityWebRequest.Result.Success)
+                if (www.result ==
+                    UnityWebRequest.Result.Success)
                 {
-                    ParseServerData(www.downloadHandler.text);
+                    ParseServerData(
+                        www.downloadHandler.text
+                    );
                 }
                 else
                 {
@@ -98,7 +127,9 @@ public bool IsHardwareConnected
                 }
             }
 
-            yield return new WaitForSecondsRealtime(pollInterval);
+            yield return new WaitForSecondsRealtime(
+                pollInterval
+            );
         }
     }
 
@@ -107,14 +138,21 @@ public bool IsHardwareConnected
         try
         {
             ServerInputData data =
-                JsonUtility.FromJson<ServerInputData>(jsonText);
+                JsonUtility.FromJson<ServerInputData>(
+                    jsonText
+                );
 
             if (data == null)
             {
-                Debug.LogWarning("[Network] JSON Data is NULL!");
+                Debug.LogWarning(
+                    "[Network] JSON Data is NULL!"
+                );
+
                 return;
             }
-            lastHardwareReceiveTime = Time.unscaledTime;
+
+            lastHardwareReceiveTime =
+                Time.unscaledTime;
 
             bool wasGameActive = isGameActive;
 
@@ -122,23 +160,22 @@ public bool IsHardwareConnected
             currentDirection = data.direction;
             isGameActive = data.game_active;
 
-            // แสดงข้อมูลครั้งแรกที่ได้รับ
             if (!hasReceivedServerData)
             {
                 Debug.Log(
-                    "[Network] First Server Data: " + jsonText
+                    "[Network] First Server Data: "
+                    + jsonText
                 );
 
                 hasReceivedServerData = true;
             }
 
             Debug.Log(
-    "[Sensor] Mode: " + currentMode +
-    " | Direction: " + currentDirection +
-    " | Input: " + horizontalInput
-);
+                "[Sensor] Mode: " + currentMode +
+                " | Direction: " + currentDirection +
+                " | Input: " + horizontalInput
+            );
 
-            // แสดง Log เมื่อสถานะเกมเปลี่ยน
             if (wasGameActive != isGameActive)
             {
                 Debug.Log(
@@ -162,7 +199,7 @@ public bool IsHardwareConnected
                 horizontalInput = 0f;
             }
 
-            // ตรวจจับคำสั่งเริ่มเกม
+            // ตรวจจับคำสั่งเริ่มเกมจาก Raspberry Pi
             if (!wasGameActive && isGameActive)
             {
                 Debug.Log(
@@ -172,7 +209,6 @@ public bool IsHardwareConnected
                 pendingStartGame = true;
             }
 
-            // ลองเริ่มเกมเมื่อมีคำสั่งรออยู่
             if (pendingStartGame)
             {
                 TryStartGame();
@@ -198,7 +234,8 @@ public bool IsHardwareConnected
         catch (Exception e)
         {
             Debug.LogError(
-                "[Network] JSON Parsing Error: " + e.Message
+                "[Network] JSON Parsing Error: "
+                + e.Message
             );
         }
     }
@@ -212,7 +249,6 @@ public bool IsHardwareConnected
 
         Debug.Log("[Network] UIManager Found!");
 
-        // ป้องกันการเรียกซ้ำ
         pendingStartGame = false;
 
         UIManager.Instance.StartGame();
@@ -224,19 +260,32 @@ public bool IsHardwareConnected
 
     public void NotifyGameOver()
     {
+        // โหมดคีย์บอร์ดไม่ต้องส่งคำสั่งไป Raspberry Pi
+        if (!IsHardwareMode())
+        {
+            Debug.Log(
+                "[Network] Keyboard Mode - Skip Raspberry Pi Game Over"
+            );
+
+            return;
+        }
+
         StartCoroutine(SendGameOverSignal());
     }
 
     private IEnumerator SendGameOverSignal()
     {
         using (UnityWebRequest www =
-            UnityWebRequest.PostWwwForm(gameOverUrl, ""))
+               UnityWebRequest.PostWwwForm(
+                   gameOverUrl, ""
+               ))
         {
             www.timeout = 5;
 
             yield return www.SendWebRequest();
 
-            if (www.result == UnityWebRequest.Result.Success)
+            if (www.result ==
+                UnityWebRequest.Result.Success)
             {
                 Debug.Log(
                     "[Network] Game Over Signal Sent!"
@@ -248,7 +297,8 @@ public bool IsHardwareConnected
             else
             {
                 Debug.LogError(
-                    "[Network] Game Over Failed: " + www.error
+                    "[Network] Game Over Failed: "
+                    + www.error
                 );
             }
         }
@@ -265,4 +315,3 @@ public class ServerInputData
     public int leftValue;
     public int rightValue;
 }
-

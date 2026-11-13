@@ -8,6 +8,9 @@ public class GameModeManager : MonoBehaviour
 
     public string selectedMode = "";
 
+    [Header("Control Mode")]
+    public bool useHardware = false;
+
     private string serverURL = "http://172.20.10.2:5000/mode";
 
     private void Awake()
@@ -18,23 +21,37 @@ public class GameModeManager : MonoBehaviour
     public void SelectPOT()
     {
         selectedMode = "POT";
-        Debug.Log("Selected Mode: " + selectedMode);
-
-        StartCoroutine(SendModeToPi());
+        StartSelectedMode();
     }
 
     public void SelectLDR()
     {
         selectedMode = "LDR";
+        StartSelectedMode();
+    }
+
+    private void StartSelectedMode()
+    {
         Debug.Log("Selected Mode: " + selectedMode);
 
-        StartCoroutine(SendModeToPi());
+        if (useHardware)
+        {
+            StartCoroutine(SendModeToPi());
+        }
+        else
+        {
+            Debug.Log("Keyboard Mode: Starting without Raspberry Pi");
+
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.StartGame();
+            }
+        }
     }
 
     IEnumerator SendModeToPi()
     {
         string json = "{\"mode\":\"" + selectedMode + "\"}";
-
         byte[] body = System.Text.Encoding.UTF8.GetBytes(json);
 
         using (UnityWebRequest request = new UnityWebRequest(serverURL, "POST"))
@@ -51,7 +68,10 @@ public class GameModeManager : MonoBehaviour
             {
                 Debug.Log("Raspberry Pi Response: " + request.downloadHandler.text);
 
-                UIManager.Instance.StartGame();
+                if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.StartGame();
+                }
             }
             else
             {

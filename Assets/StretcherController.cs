@@ -18,33 +18,28 @@ public class StretcherController : MonoBehaviour
 
     float moveInput = 0f;
 
-    // ตรวจสอบว่า Hardware ยังส่งข้อมูลอยู่หรือไม่
-    if (NetworkInputManager.Instance != null &&
+    // ใช้ Hardware เฉพาะเมื่อมีการส่งข้อมูลควบคุมจริง
+    bool useHardware =
+        NetworkInputManager.Instance != null &&
         NetworkInputManager.Instance.IsHardwareConnected &&
-        NetworkInputManager.Instance.isGameActive)
+        NetworkInputManager.Instance.isGameActive;
+
+    if (useHardware)
     {
-        // ใช้ ESP32 ควบคุม
         moveInput = NetworkInputManager.Instance.horizontalInput;
     }
     else
     {
-        // ใช้ Keyboard ควบคุม
-        moveInput = Input.GetAxis("Horizontal");
+        // Keyboard: รองรับลูกศรและ A/D
+        moveInput = Input.GetAxisRaw("Horizontal");
 
         if (invertDirection)
-        {
             moveInput *= -1f;
-        }
     }
 
-    // คำนวณตำแหน่งเปล
     Vector3 pos = transform.position;
-
     pos.x += moveInput * moveSpeed * Time.deltaTime;
-
-    // จำกัดขอบเขต
     pos.x = Mathf.Clamp(pos.x, minX, maxX);
-
     transform.position = pos;
 }
     // ----------------------------------------------------

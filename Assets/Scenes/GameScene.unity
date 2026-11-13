@@ -14664,6 +14664,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameModeManager
   selectedMode: 
+  useHardware: 0
 --- !u!1 &1704394350
 GameObject:
   m_ObjectHideFlags: 0
