@@ -11,25 +11,42 @@ public class StretcherController : MonoBehaviour
     public bool invertDirection = true; // กลับทิศทางควบคุม
 
     void Update()
+{
+    if (GameManager.Instance != null &&
+        GameManager.Instance.isGameOver)
+        return;
+
+    float moveInput = 0f;
+
+    // ตรวจสอบว่า Hardware ยังส่งข้อมูลอยู่หรือไม่
+    if (NetworkInputManager.Instance != null &&
+        NetworkInputManager.Instance.IsHardwareConnected &&
+        NetworkInputManager.Instance.isGameActive)
     {
-        if (GameManager.Instance != null && GameManager.Instance.isGameOver) return;
+        // ใช้ ESP32 ควบคุม
+        moveInput = NetworkInputManager.Instance.horizontalInput;
+    }
+    else
+    {
+        // ใช้ Keyboard ควบคุม
+        moveInput = Input.GetAxis("Horizontal");
 
-        // อ่านค่า Input จากคีย์บอร์ด
-        float moveInput = Input.GetAxis("Horizontal");
-
-        // ถ้าเลือก invertDirection ให้คูณ -1 เพื่อสลับทิศทาง (A = ไปซ้าย, D = ไปขวา)
         if (invertDirection)
         {
             moveInput *= -1f;
         }
-
-        // อัปเดตตำแหน่งเปล
-        Vector3 pos = transform.position;
-        pos.x += moveInput * moveSpeed * Time.deltaTime;
-        pos.x = Mathf.Clamp(pos.x, minX, maxX);
-        transform.position = pos;
     }
 
+    // คำนวณตำแหน่งเปล
+    Vector3 pos = transform.position;
+
+    pos.x += moveInput * moveSpeed * Time.deltaTime;
+
+    // จำกัดขอบเขต
+    pos.x = Mathf.Clamp(pos.x, minX, maxX);
+
+    transform.position = pos;
+}
     // ----------------------------------------------------
     // 🧟‍♂️ ระบบตรวจจับการชนกับ ซอมบี้ (Phantom Jumpscare)
     // ----------------------------------------------------

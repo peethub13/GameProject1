@@ -8,7 +8,7 @@ public class NetworkInputManager : MonoBehaviour
     public static NetworkInputManager Instance;
 
     [Header("--- Server Config ---")]
-    public string serverIP = "192.168.50.2";
+    public string serverIP = "172.20.10.2";
     public int serverPort = 5000;
     public float pollInterval = 0.05f;
 
@@ -27,6 +27,19 @@ public class NetworkInputManager : MonoBehaviour
 
     private bool hasReceivedServerData = false;
     private bool pendingStartGame = false;
+    [Header("--- Hardware Detection ---")]
+public float hardwareTimeout = 1.5f;
+
+private float lastHardwareReceiveTime = -999f;
+
+public bool IsHardwareConnected
+{
+    get
+    {
+        return Time.unscaledTime - lastHardwareReceiveTime
+               <= hardwareTimeout;
+    }
+}
 
     private void Awake()
     {
@@ -101,6 +114,7 @@ public class NetworkInputManager : MonoBehaviour
                 Debug.LogWarning("[Network] JSON Data is NULL!");
                 return;
             }
+            lastHardwareReceiveTime = Time.unscaledTime;
 
             bool wasGameActive = isGameActive;
 
@@ -117,6 +131,12 @@ public class NetworkInputManager : MonoBehaviour
 
                 hasReceivedServerData = true;
             }
+
+            Debug.Log(
+    "[Sensor] Mode: " + currentMode +
+    " | Direction: " + currentDirection +
+    " | Input: " + horizontalInput
+);
 
             // แสดง Log เมื่อสถานะเกมเปลี่ยน
             if (wasGameActive != isGameActive)
@@ -245,3 +265,4 @@ public class ServerInputData
     public int leftValue;
     public int rightValue;
 }
+
